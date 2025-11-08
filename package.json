@@ -1,0 +1,14 @@
+{
+  "name": "com.tahuynhduc.framework",
+  "version": "1.0.0",
+  "displayName": "HuynhDuc Framework",
+  "description": "A custom framework for your Unity project.",
+  "unity": "2020.3",
+  "keywords": [
+    "framework",
+    "utility"
+  ],
+  "author": {
+    "name": "tahuynhduc"
+  }
+}
