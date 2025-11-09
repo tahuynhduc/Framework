@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Sirenix.OdinInspector;
 using UnityEngine;
 
 #if UNITY_EDITOR
@@ -31,7 +32,7 @@ public class SingletonSO : ScriptableObject
     [Header("📂 Thư mục chứa ScriptableObjects")]
     [SerializeField] private string targetFolder = "Assets/ScriptableObjects";
 
-    private Dictionary<Type, ScriptableObject> _map;
+    [ShowInInspector] private Dictionary<Type, ScriptableObject> _map;
 
 #if UNITY_EDITOR
     [SerializeField, HideInInspector]
@@ -40,6 +41,7 @@ public class SingletonSO : ScriptableObject
 
     // 🧠 Gọi mỗi khi asset có thay đổi (Editor only)
 #if UNITY_EDITOR
+    [Button]
     private void OnValidate()
     {
         AutoLoadAssetsInEditor();

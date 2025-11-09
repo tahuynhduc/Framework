@@ -23,31 +23,6 @@ public enum ResolveRuntimeScope
     GlobalOnly, // Tìm tất cả GameObject trong scene
     AutoAdd     // Nếu là Component, tự AddComponent trên requester
 }
-
-/// <summary>
-/// This attribute to get a type with type declared has scope  
-/// </summary>
-[AttributeUsage(AttributeTargets.Field)]
-public class ResolveAttribute : Attribute
-{
-    public ResolveLocalScope Scope { get; }
-    public ResolveAttribute(ResolveLocalScope scope = ResolveLocalScope.LocalOnly) => Scope = scope;
-}
-/// <summary>
-/// This attribute to get many type with type declared has scope 
-/// </summary>
-[AttributeUsage(AttributeTargets.Field)]
-public class ResolvesAttribute : Attribute
-{
-    public ResolveLocalScope Scope { get; }
-    public ResolvesAttribute(ResolveLocalScope scope = ResolveLocalScope.LocalOnly) => Scope = scope;
-}
-/// <summary>
-/// This attribute to tick this class as the attribute
-/// </summary>
-[AttributeUsage(AttributeTargets.Class)]
-public class ServiceAttribute : Attribute { }
-
 #endregion
 
 #region 📌 Service Registry
@@ -55,7 +30,6 @@ public class ServiceAttribute : Attribute { }
 public static class ServiceRegistry
 {
     private static readonly Dictionary<GameObject, List<object>> servicesByObject = new();
-    private static readonly Dictionary<Type, FieldInfo[]> cachedResolveFields = new();
 
     #region Register / Unregister
 
@@ -70,7 +44,6 @@ public static class ServiceRegistry
         if (!list.Contains(service))
         {
             list.Add(service);
-            AutoResolveAll(owner); // auto inject fields local
         }
     }
 
@@ -191,124 +164,6 @@ public static class ServiceRegistry
     #endregion
 
     #endregion
-
-    #region AutoResolve (local only)
-
-    private static void AutoResolveAll(GameObject owner)
-    {
-        foreach (var comp in owner.GetComponentsInChildren<Component>(true))
-            ResolveFields(comp);
-    }
-
-    public static void ResolveFields(object target)
-    {
-        if (!(target is Component comp)) return;
-
-        var type = target.GetType();
-        if (!cachedResolveFields.TryGetValue(type, out var fields))
-        {
-            fields = type.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-            cachedResolveFields[type] = fields;
-        }
-
-        foreach (var f in fields)
-        {
-            var singleAttr = f.GetCustomAttribute<ResolveAttribute>();
-            var manyAttr = f.GetCustomAttribute<ResolvesAttribute>();
-            if (singleAttr == null && manyAttr == null) continue;
-
-            if (manyAttr != null)
-            {
-                if (f.FieldType.IsGenericType && f.FieldType.GetGenericTypeDefinition() == typeof(List<>))
-                {
-                    var elementType = f.FieldType.GetGenericArguments()[0];
-                    var resolvedList = Resolves(comp.gameObject, elementType, ResolveRuntimeScope.GlobalOnly); // runtime resolve for List
-                    var listInstance = Activator.CreateInstance(typeof(List<>).MakeGenericType(elementType));
-                    var addMethod = listInstance.GetType().GetMethod("Add");
-                    foreach (var obj in resolvedList) addMethod.Invoke(listInstance, new[] { obj });
-                    f.SetValue(target, listInstance);
-                }
-                continue;
-            }
-
-            if (singleAttr != null)
-            {
-                object resolved = null;
-                if (singleAttr.Scope == ResolveLocalScope.LocalOnly || singleAttr.Scope == ResolveLocalScope.AutoAdd)
-                    resolved = ResolveLocal(comp.gameObject, f.FieldType);
-                f.SetValue(target, resolved);
-            }
-        }
-    }
-
-    #endregion
-}
-
-#endregion
-
-#region Base Service
-
-// Tự register/unregister nếu class có [Service]
-[Service]
-public abstract class ServiceBase : MonoBehaviour
-{
-    protected virtual void Awake()
-    {
-        if (Attribute.IsDefined(GetType(), typeof(ServiceAttribute)))
-            ServiceRegistry.Register(gameObject, this);
-    }
-
-    protected virtual void OnDestroy()
-    {
-        if (Attribute.IsDefined(GetType(), typeof(ServiceAttribute)))
-            ServiceRegistry.Unregister(gameObject, this);
-    }
-}
-
-#endregion
-
-
-#region Example to use
-
-public class ExampleChacracter : MonoBehaviour
-{
-    [Resolve] private ExampleHead _exampleHead;
-
-    [Resolves] private List<ExampleHand> _exampleHands;
-    
-    private ExampleHead ExampleHead => ServiceRegistry.Resolve<ExampleHead>(gameObject);
-    
-    private List<ExampleHand> ExampleHands =>  ServiceRegistry.Resolves<ExampleHand>(gameObject);
-    private void Start()
-    {
-        
-        if (_exampleHead != null)
-            _exampleHead?.RotateHead();
-
-        foreach (var e in _exampleHands)
-            e?.Attack();
-        
-        ExampleHead?.RotateHead();
-        
-        foreach (var e in ExampleHands)
-            e?.Attack();
-    }
-}
-
-public class ExampleHead : ServiceBase
-{
-    public void RotateHead()
-    {
-        Debug.Log($"{gameObject.name}");
-    }
-}
-
-public class ExampleHand : ServiceBase
-{
-    public void Attack()
-    {
-        Debug.Log($"{gameObject.name}");
-    }
 }
 
 #endregion
