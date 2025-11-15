@@ -47,8 +47,8 @@ public abstract class SingletonCustom<T> : MonoBehaviour where T : MonoBehaviour
     }
 
     protected virtual void Init() { }
-
-    private void OnApplicationQuit()
+    
+    protected virtual void OnApplicationQuit()
     {
         _applicationIsQuitting = true;
     }

@@ -23,20 +23,15 @@ public abstract class HighModule<T> : ServiceBase, IHighModule
         module = default;
         return false;
     }
-
+    
     public void RegisterLowModule(ILowModule module)
     {
-        Type moduleType = module.GetType();
-        if (!lowModules.ContainsKey(moduleType))
-        {
-            lowModules[moduleType] = module;
-            // Debug.Log($"[{gameObject.name}] Registered LowModule: {moduleType.Name}");
-        }
+        var moduleType = module.GetType();
+        lowModules.TryAdd(moduleType, module);
     }
 
     public void UnregisterLowModule(ILowModule module)
     {
         lowModules.Remove(module.GetType());
-        // Debug.Log($"[{gameObject.name}] Unregistered LowModule: {module.GetType().Name}");
     }
 }
