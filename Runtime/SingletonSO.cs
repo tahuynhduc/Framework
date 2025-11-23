@@ -142,7 +142,7 @@ public class SingletonSO : ScriptableObject
     }
 #endif
 }
-
+#if UNITY_EDITOR
 public static class GetAssetsReader
 {
     public static List<T> GetAssets<T>(string targetFolder,string type) where T : Object
@@ -162,3 +162,4 @@ public static class GetAssetsReader
         return assets;
     }
 }
+#endif
