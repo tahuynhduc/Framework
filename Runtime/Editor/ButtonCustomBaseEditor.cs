@@ -10,7 +10,7 @@ public class ButtonCustomBaseEditor : Editor
         serializedObject.Update();
 
         // Lấy reference
-        SerializedProperty button = serializedObject.FindProperty("button");
+        SerializedProperty button = serializedObject.FindProperty("isButton");
         SerializedProperty distanceOnClick = serializedObject.FindProperty("distanceOnClick");
         SerializedProperty interactable = serializedObject.FindProperty("interactable");
         SerializedProperty buttonType = serializedObject.FindProperty("buttonType");
